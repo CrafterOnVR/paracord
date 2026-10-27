@@ -20,7 +20,9 @@ const state = {
   // Stored in localStorage
   servers: [],
   dms: [],
-  messages: {}
+  messages: {},
+  smitedUsers: [],
+  uwuIntensity: 2
 };
 
 // Load saved data or start clean
@@ -34,6 +36,12 @@ function loadPersistedData() {
 
     const savedMessages = localStorage.getItem("paracord_messages");
     if (savedMessages) state.messages = JSON.parse(savedMessages);
+
+    const savedSmited = localStorage.getItem("paracord_smited_users");
+    if (savedSmited) state.smitedUsers = JSON.parse(savedSmited);
+
+    const savedIntensity = localStorage.getItem("paracord_uwu_intensity");
+    if (savedIntensity) state.uwuIntensity = parseInt(savedIntensity, 10) || 2;
   } catch (e) {
     console.warn("Storage load error:", e);
   }
@@ -44,6 +52,8 @@ function persistData() {
     localStorage.setItem("paracord_servers", JSON.stringify(state.servers));
     localStorage.setItem("paracord_dms", JSON.stringify(state.dms));
     localStorage.setItem("paracord_messages", JSON.stringify(state.messages));
+    localStorage.setItem("paracord_smited_users", JSON.stringify(state.smitedUsers || []));
+    localStorage.setItem("paracord_uwu_intensity", state.uwuIntensity || 2);
   } catch (e) {
     console.warn("Storage save error:", e);
   }
@@ -480,7 +490,7 @@ function createMessageRowElement(msg, emojis) {
   row.className = "message-row";
 
   let emojiHtml = "";
-  if (!msg.isBurned && emojis.length > 0) {
+  if (!msg.isBurned && emojis.length > 0 && msg.content) {
     emojis.forEach(em => {
       if (msg.content.includes(em.tag)) {
         emojiHtml += `<img src="${em.file}" alt="${em.name}" class="msg-emoji-img" title="${em.tag}">`;
@@ -488,15 +498,30 @@ function createMessageRowElement(msg, emojis) {
     });
   }
 
-  const initial = msg.authorName ? msg.authorName.charAt(0).toUpperCase() : "U";
+  let avatarHtml = "";
+  if (msg.isBot) {
+    avatarHtml = `<img src="${msg.avatarUrl || 'smite_avatar.png'}" alt="SMITE" class="msg-avatar" style="border-radius: 50%; object-fit: cover;">`;
+  } else {
+    const initial = msg.authorName ? msg.authorName.charAt(0).toUpperCase() : "U";
+    avatarHtml = `<div class="msg-avatar" style="background-color: ${msg.authorColor || '#5865F2'}; color: white;">${initial}</div>`;
+  }
+
+  let embedHtml = "";
+  if (msg.embed) {
+    embedHtml = `
+      <div class="discord-embed smite-embed">
+        ${msg.embed.title ? `<div class="embed-title">${escapeHtml(msg.embed.title)}</div>` : ""}
+        ${msg.embed.description ? `<div class="embed-desc">${msg.embed.description}</div>` : ""}
+      </div>
+    `;
+  }
+
   row.innerHTML = `
-    <div class="msg-avatar" style="background-color: ${msg.authorColor || '#5865F2'}; color: white;">
-      ${initial}
-    </div>
+    ${avatarHtml}
     <div class="msg-content-wrapper">
       <div class="msg-header">
         <span class="author-name" style="color: ${msg.authorColor || '#F2F3F5'}">${msg.authorName}</span>
-        ${msg.roleName ? `<span class="role-badge" style="background: ${msg.authorColor}22; color: ${msg.authorColor}">${msg.roleName}</span>` : ""}
+        ${msg.isBot ? `<span class="bot-tag">✓ APP</span>` : (msg.roleName ? `<span class="role-badge" style="background: ${msg.authorColor}22; color: ${msg.authorColor}">${msg.roleName}</span>` : "")}
         <span class="msg-time">${msg.timestamp}</span>
       </div>
       ${msg.burnTimerSeconds > 0 && !msg.isBurned ? `
@@ -504,7 +529,8 @@ function createMessageRowElement(msg, emojis) {
           <span>🔥</span> Message disappears in ${msg.remainingSeconds}s
         </div>
       ` : ""}
-      <div class="msg-text ${msg.isBurned ? "burned" : ""}">${escapeHtml(msg.content)}</div>
+      ${msg.content ? `<div class="msg-text ${msg.isBurned ? "burned" : ""}">${escapeHtml(msg.content)}</div>` : ""}
+      ${embedHtml}
       ${emojiHtml ? `<div class="msg-emojis-row">${emojiHtml}</div>` : ""}
     </div>
   `;
@@ -537,12 +563,263 @@ setInterval(() => {
   }
 }, 1000);
 
+// ========================================================
+// SMITE BOT & UWUIFY ENGINE
+// ========================================================
+function uwuifyText(text, intensity = 2) {
+  if (!text) return "";
+  let res = text;
+
+  // 1. Core letters: r & l -> w
+  res = res.replace(/r/g, "w").replace(/l/g, "w");
+  res = res.replace(/R/g, "W").replace(/L/g, "W");
+
+  // 2. Phonics replacements
+  res = res.replace(/\bthe\b/gi, "da");
+  res = res.replace(/\bthat\b/gi, "dat");
+  res = res.replace(/\bthis\b/gi, "dis");
+  res = res.replace(/th/gi, "d");
+  res = res.replace(/ove/gi, "uv");
+  res = res.replace(/\byou\b/gi, "u");
+  res = res.replace(/\byour\b/gi, "ur");
+
+  // 3. Stuttering based on intensity
+  if (intensity >= 2) {
+    res = res.replace(/\b([b-df-hj-np-tv-z])([a-z]{3,})/gi, (match, firstLetter, rest) => {
+      if (Math.random() < 0.3) {
+        return `${firstLetter}-${firstLetter}${rest}`;
+      }
+      return match;
+    });
+  }
+
+  // 4. Kaomojis / faces
+  const faces = [
+    "(・`ω´・)", "OwO", "UwU", ">w<", "^w^", "(⑅˘꒳˘)", ":3", "rawr x3", "(*^ω^)", "nya~", "o.O"
+  ];
+
+  if (intensity >= 1) {
+    const parts = res.split(/([.!?]+)/);
+    res = parts.map((part, idx) => {
+      if (idx % 2 === 1) {
+        const face = faces[Math.floor(Math.random() * faces.length)];
+        return `${part} ${face}`;
+      }
+      return part;
+    }).join("");
+
+    if (!/[.!?]$/.test(res.trim())) {
+      const face = faces[Math.floor(Math.random() * faces.length)];
+      res += ` ${face}`;
+    }
+  }
+
+  return res.trim();
+}
+
+function handleBotSmiteTrigger(authorName, originalText, targetId) {
+  const isSmited = (state.smitedUsers || []).some(u => u.toLowerCase() === authorName.toLowerCase());
+  if (!isSmited) return;
+
+  const currentList = state.messages[targetId] || [];
+  const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const uwuContent = uwuifyText(originalText, state.uwuIntensity || 2);
+
+  setTimeout(() => {
+    currentList.push({
+      id: `msg_smite_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `⚡ SMITE STRIKES ${authorName.toUpperCase()}!`,
+        description: `<em>"${escapeHtml(uwuContent)}"</em>`
+      }
+    });
+
+    state.messages[targetId] = currentList;
+    persistData();
+    if (state.activeView === "server") renderChannelChat();
+    else renderDmChat();
+  }, 350);
+}
+
+function processSlashCommand(cmdStr, targetId) {
+  const parts = cmdStr.trim().split(/\s+/);
+  const root = parts[0].toLowerCase();
+  const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const currentList = state.messages[targetId] || [];
+
+  if (root === "/smite") {
+    let target = parts.slice(1).join(" ").trim().replace(/^@/, "");
+    if (!target) target = "CrafterOnVR";
+
+    if (!state.smitedUsers) state.smitedUsers = [];
+    if (!state.smitedUsers.some(u => u.toLowerCase() === target.toLowerCase())) {
+      state.smitedUsers.push(target);
+      persistData();
+    }
+
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `⚡ A bolt of divine lightning strikes ${target}!`,
+        description: `<strong>${escapeHtml(target)}</strong> has been <strong>SMITED</strong> and placed under <strong>uwulock</strong>!<br>Every message they send will now be converted into chaotic uwu speak.<br><br><em>Use <code>/unsmite ${escapeHtml(target)}</code> to show mercy.</em>`
+      }
+    });
+  } else if (root === "/unsmite") {
+    let target = parts.slice(1).join(" ").trim().replace(/^@/, "");
+    if (state.smitedUsers) {
+      state.smitedUsers = state.smitedUsers.filter(u => u.toLowerCase() !== target.toLowerCase());
+      persistData();
+    }
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `✨ MERCY HAS BEEN GRANTED`,
+        description: `<strong>${escapeHtml(target || "Target")}</strong> has been freed from the smite curse!`
+      }
+    });
+  } else if (root === "/uwuify") {
+    const textToConvert = parts.slice(1).join(" ");
+    const uwuResult = uwuifyText(textToConvert || "hello world this is a test", state.uwuIntensity || 2);
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: uwuResult
+    });
+  } else if (root === "/intensity") {
+    const val = parseInt(parts[1], 10) || 2;
+    state.uwuIntensity = Math.min(3, Math.max(1, val));
+    persistData();
+    const levels = { 1: "Mild (r->w, occasional face)", 2: "Normal (stuttering + faces)", 3: "Extreme (hyper-uwu overload)" };
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `⚙️ SMITE INTENSITY UPDATED`,
+        description: `Intensity set to <strong>Level ${state.uwuIntensity}</strong>: <em>${levels[state.uwuIntensity]}</em>`
+      }
+    });
+  } else if (root === "/smite-list") {
+    const list = state.smitedUsers || [];
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `📜 CURRENTLY SMITED MEMBERS (${list.length})`,
+        description: list.length > 0 ? list.map(u => `• <strong>${escapeHtml(u)}</strong> (under uwulock)`).join("<br>") : `<em>No one is currently smited. Use <code>/smite @user</code> to smite someone!</em>`
+      }
+    });
+  } else if (root === "/mock" || root === "/as") {
+    const mockUser = parts[1] || "Friend";
+    const mockMsg = parts.slice(2).join(" ") || "Hey guys what is going on";
+    currentList.push({
+      id: `msg_mock_${Date.now()}`,
+      authorName: mockUser,
+      authorColor: "#57F287",
+      roleName: "Member",
+      content: mockMsg,
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false
+    });
+    handleBotSmiteTrigger(mockUser, mockMsg, targetId);
+  } else {
+    currentList.push({
+      id: `msg_cmd_${Date.now()}`,
+      isBot: true,
+      authorName: "SMITE",
+      authorColor: "#ED4245",
+      avatarUrl: "smite_avatar.png",
+      timestamp: `Today at ${now}`,
+      burnTimerSeconds: 0,
+      remainingSeconds: 0,
+      isBurned: false,
+      content: "",
+      embed: {
+        title: `⚡ SMITE BOT (uwuify#5601) COMMANDS`,
+        description: `
+          • <code>/smite &lt;user&gt;</code> — Strike a friend with lightning and uwu-lock their messages!<br>
+          • <code>/unsmite &lt;user&gt;</code> — Release a friend from the smite curse.<br>
+          • <code>/uwuify &lt;text&gt;</code> — Instantly turn any sentence into uwu speak.<br>
+          • <code>/intensity &lt;1-3&gt;</code> — Change uwuification strength (Default: 2).<br>
+          • <code>/smite-list</code> — View all currently smited targets.<br>
+          • <code>/mock &lt;user&gt; &lt;text&gt;</code> — Simulate a friend's message to test smiting them!<br>
+          • <code>/help</code> — Show this command menu.
+        `
+      }
+    });
+  }
+
+  state.messages[targetId] = currentList;
+  persistData();
+  if (state.activeView === "server") renderChannelChat();
+  else renderDmChat();
+}
+
 function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
 
   const targetId = state.activeView === "server" ? state.activeChannelId : state.activeDmId;
   if (!targetId) return;
+
+  if (text.startsWith("/")) {
+    messageInput.value = "";
+    const slashTray = document.getElementById("slashCommandTray");
+    if (slashTray) slashTray.classList.add("hidden");
+    processSlashCommand(text, targetId);
+    return;
+  }
 
   const currentList = state.messages[targetId] || [];
   const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -565,6 +842,8 @@ function sendMessage() {
 
   if (state.activeView === "server") renderChannelChat();
   else renderDmChat();
+
+  handleBotSmiteTrigger("CrafterOnVR", text, targetId);
 }
 
 // ========================================================
@@ -732,6 +1011,8 @@ function closeAllModals() {
   addServerModal.classList.add("hidden");
   newDmModal.classList.add("hidden");
   dmsModal.classList.add("hidden");
+  const smiteModal = document.getElementById("smiteProfileModal");
+  if (smiteModal) smiteModal.classList.add("hidden");
   modalStepChoice.classList.remove("hidden");
   modalStepCreateForm.classList.add("hidden");
   modalStepImportForm.classList.add("hidden");
@@ -879,9 +1160,84 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Message Send
-  messageInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
+  // Slash command autocomplete tray
+  const slashTray = document.getElementById("slashCommandTray");
+  const slashItems = document.querySelectorAll(".slash-command-item");
+  const memberSidebar = document.getElementById("memberSidebar");
+  const btnToggleMemberList = document.getElementById("btnToggleMemberList");
+  const memberSmiteBot = document.getElementById("memberSmiteBot");
+  const smiteProfileModal = document.getElementById("smiteProfileModal");
+  const btnCloseSmiteProfile = document.getElementById("btnCloseSmiteProfile");
+
+  if (messageInput) {
+    messageInput.addEventListener("input", () => {
+      const val = messageInput.value;
+      if (val.startsWith("/")) {
+        if (slashTray) slashTray.classList.remove("hidden");
+        const query = val.toLowerCase();
+        slashItems.forEach(item => {
+          const cmd = item.getAttribute("data-cmd").toLowerCase();
+          item.style.display = cmd.includes(query) ? "flex" : "none";
+        });
+      } else {
+        if (slashTray) slashTray.classList.add("hidden");
+      }
+    });
+
+    messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && slashTray) {
+        slashTray.classList.add("hidden");
+      }
+      if (e.key === "Enter") {
+        if (slashTray) slashTray.classList.add("hidden");
+        sendMessage();
+      }
+    });
+  }
+
+  // Click on slash command items
+  slashItems.forEach(item => {
+    item.addEventListener("click", () => {
+      const cmd = item.getAttribute("data-cmd");
+      messageInput.value = cmd;
+      messageInput.focus();
+      if (slashTray) slashTray.classList.add("hidden");
+    });
+  });
+
+  // Toggle member sidebar
+  if (btnToggleMemberList && memberSidebar) {
+    btnToggleMemberList.addEventListener("click", () => {
+      memberSidebar.classList.toggle("hidden");
+      btnToggleMemberList.classList.toggle("active");
+    });
+  }
+
+  // SMITE Bot Profile Modal
+  if (memberSmiteBot && smiteProfileModal) {
+    memberSmiteBot.addEventListener("click", () => {
+      smiteProfileModal.classList.remove("hidden");
+    });
+  }
+  if (btnCloseSmiteProfile && smiteProfileModal) {
+    btnCloseSmiteProfile.addEventListener("click", () => {
+      smiteProfileModal.classList.add("hidden");
+    });
+  }
+  if (smiteProfileModal) {
+    smiteProfileModal.addEventListener("click", (e) => {
+      if (e.target === smiteProfileModal) smiteProfileModal.classList.add("hidden");
+    });
+  }
+
+  // Click command pills in SMITE Profile
+  document.querySelectorAll(".cmd-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      const cmd = pill.getAttribute("data-cmd");
+      messageInput.value = cmd;
+      messageInput.focus();
+      if (smiteProfileModal) smiteProfileModal.classList.add("hidden");
+    });
   });
 
   // Ephemeral Timer Toggle
