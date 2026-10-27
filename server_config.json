@@ -1,105 +1,88 @@
 {
-  "guild_id": "999888777666",
-  "name": "Paranoid Sanctuary",
-  "description": "Zero-trust encrypted sanctuary group chat.",
+  "guild_id": "ig_bro_server",
+  "name": "ig bro",
+  "description": "Private server export.",
   "channels": [
     {
-      "id": "100",
-      "name": "RESTRICTED VAULT",
-      "type": 4,
+      "id": "ch_insane_clips",
+      "name": "for-the-criminally-insane-clips",
+      "type": 0,
       "position": 0,
+      "parent_id": null,
+      "topic": "Diabolical clips & screenshots (media stays client-side only).",
+      "locked": true
+    },
+    {
+      "id": "cat_text",
+      "name": "Text Channels",
+      "type": 4,
+      "position": 1,
       "parent_id": null
     },
     {
-      "id": "101",
-      "name": "classified-gc",
-      "type": 0,
-      "position": 1,
-      "parent_id": "100",
-      "topic": "Protected by FLAG_SECURE & Biometrics."
-    },
-    {
-      "id": "102",
-      "name": "ephemeral-burns",
+      "id": "ch_general",
+      "name": "general",
       "type": 0,
       "position": 2,
-      "parent_id": "100",
-      "topic": "Messages burn after reading."
+      "parent_id": "cat_text",
+      "topic": "General chat.",
+      "locked": false
     },
     {
-      "id": "200",
-      "name": "SYSTEM",
-      "type": 4,
+      "id": "ch_dg_news",
+      "name": "deometrygash-news",
+      "type": 0,
       "position": 3,
+      "parent_id": "cat_text",
+      "topic": "Geometry Dash & Deometrygash updates.",
+      "locked": false
+    },
+    {
+      "id": "cat_voice",
+      "name": "Voice Channels",
+      "type": 4,
+      "position": 4,
       "parent_id": null
     },
     {
-      "id": "201",
-      "name": "audit-feed",
-      "type": 0,
-      "position": 4,
-      "parent_id": "200",
-      "topic": "Local encrypted telemetry."
+      "id": "ch_voice_general",
+      "name": "General",
+      "type": 2,
+      "position": 5,
+      "parent_id": "cat_voice",
+      "topic": "",
+      "locked": false
     }
   ],
   "roles": [
     {
-      "id": "1",
-      "name": "Sanctuary Admin",
+      "id": "role_owner",
+      "name": "Server Owner",
+      "color": "#E91E63",
+      "position": 3,
+      "hoist": true
+    },
+    {
+      "id": "role_admin",
+      "name": "Admin",
       "color": "#5865F2",
       "position": 2,
       "hoist": true
     },
     {
-      "id": "2",
-      "name": "Verified Biometric",
+      "id": "role_member",
+      "name": "Member",
       "color": "#57F287",
       "position": 1,
-      "hoist": true
+      "hoist": false
     },
     {
-      "id": "0",
+      "id": "role_everyone",
       "name": "@everyone",
       "color": "#99AAB5",
       "position": 0,
       "hoist": false
     }
   ],
-  "emojis": [
-    {
-      "id": "demo_pepe_hacker",
-      "name": "pepe_hacker",
-      "animated": false,
-      "file": "emojis/pepe_hacker.png",
-      "tag": ":pepe_hacker:"
-    },
-    {
-      "id": "demo_lock_vault",
-      "name": "lock_vault",
-      "animated": false,
-      "file": "emojis/lock_vault.png",
-      "tag": ":lock_vault:"
-    },
-    {
-      "id": "demo_skull_burn",
-      "name": "skull_burn",
-      "animated": false,
-      "file": "emojis/skull_burn.png",
-      "tag": ":skull_burn:"
-    },
-    {
-      "id": "demo_bio_face",
-      "name": "bio_face",
-      "animated": false,
-      "file": "emojis/bio_face.png",
-      "tag": ":bio_face:"
-    },
-    {
-      "id": "demo_quantum_key",
-      "name": "quantum_key",
-      "animated": false,
-      "file": "emojis/quantum_key.png",
-      "tag": ":quantum_key:"
-    }
-  ]
+  "emojis": []
 }

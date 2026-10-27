@@ -127,6 +127,7 @@ const dmsPercent = document.getElementById("dmsPercent");
 const dmsStatusText = document.getElementById("dmsStatusText");
 
 const HASH_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5.88 20.5l.84-4.5H3.1l.38-2h3.84l.94-5H4.64l.38-2h3.84l.84-4.5h2.08l-.84 4.5h4.94l.84-4.5h2.08l-.84 4.5h3.62l-.38 2h-3.84l-.94 5h3.62l-.38 2h-3.84l-.84 4.5h-2.08l.84-4.5H9.68l-.84 4.5H6.76zM11.76 14h4.94l.94-5h-4.94l-.94 5z"/></svg>`;
+const LOCKED_HASH_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 10h-1.07A7.002 7.002 0 0 0 3 12a7.002 7.002 0 0 0 6.93 7H6.76l-.84 4.5h2.08l.84-4.5h1.92A7.002 7.002 0 0 0 18 10zm-6-6c2.76 0 5 2.24 5 5h-10c0-2.76 2.24-5 5-5zm6 14a4.996 4.996 0 0 1-4.9-4h9.8a4.996 4.996 0 0 1-4.9 4z"/><path d="M18 8V6a4 4 0 0 0-8 0v2H8v8h12V8h-2zm-6-2a2 2 0 0 1 4 0v2h-4V6z"/></svg>`;
 const VOLUME_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
 const AT_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
 
@@ -337,7 +338,12 @@ function renderServerChannels() {
   const textChannels = (currentServer.channels || []).filter(c => c.type === 0);
   const voiceChannels = (currentServer.channels || []).filter(c => c.type === 2);
 
-  if (categories.length === 0) {
+  // 1. Uncategorized text channels at the top (like #for-the-criminally-insane-clips)
+  const uncategorized = textChannels.filter(c => !c.parent_id || !categories.some(cat => cat.id === c.parent_id));
+  uncategorized.forEach(c => appendServerChannelItem(c));
+
+  // 2. Categorized text channels
+  if (categories.length === 0 && uncategorized.length === 0) {
     const catLabel = document.createElement("div");
     catLabel.className = "channel-category";
     catLabel.innerHTML = `
@@ -387,8 +393,9 @@ function renderServerChannels() {
 function appendServerChannelItem(channel) {
   const item = document.createElement("div");
   item.className = `channel-item ${channel.id === state.activeChannelId ? "active" : ""}`;
+  const icon = channel.locked ? LOCKED_HASH_ICON_SVG : HASH_ICON_SVG;
   item.innerHTML = `
-    ${HASH_ICON_SVG}
+    ${icon}
     <span>${channel.name}</span>
   `;
   item.addEventListener("click", () => {
@@ -409,7 +416,12 @@ function renderChannelChat() {
   const chName = currentChannel ? currentChannel.name : "general";
   const chTopic = currentChannel ? (currentChannel.topic || `Welcome to the start of #${chName}!`) : "";
 
-  topbarIcon.innerHTML = `<path d="M5.88 20.5l.84-4.5H3.1l.38-2h3.84l.94-5H4.64l.38-2h3.84l.84-4.5h2.08l-.84 4.5h4.94l.84-4.5h2.08l-.84 4.5h3.62l-.38 2h-3.84l-.94 5h3.62l-.38 2h-3.84l-.84 4.5h-2.08l.84-4.5H9.68l-.84 4.5H6.76zM11.76 14h4.94l.94-5h-4.94l-.94 5z"/>`;
+  const isLocked = currentChannel && currentChannel.locked;
+  if (isLocked) {
+    topbarIcon.innerHTML = `<path d="M18 10h-1.07A7.002 7.002 0 0 0 3 12a7.002 7.002 0 0 0 6.93 7H6.76l-.84 4.5h2.08l.84-4.5h1.92A7.002 7.002 0 0 0 18 10zm-6-6c2.76 0 5 2.24 5 5h-10c0-2.76 2.24-5 5-5zm6 14a4.996 4.996 0 0 1-4.9-4h9.8a4.996 4.996 0 0 1-4.9 4z"/><path d="M18 8V6a4 4 0 0 0-8 0v2H8v8h12V8h-2zm-6-2a2 2 0 0 1 4 0v2h-4V6z"/>`;
+  } else {
+    topbarIcon.innerHTML = `<path d="M5.88 20.5l.84-4.5H3.1l.38-2h3.84l.94-5H4.64l.38-2h3.84l.84-4.5h2.08l-.84 4.5h4.94l.84-4.5h2.08l-.84 4.5h3.62l-.38 2h-3.84l-.94 5h3.62l-.38 2h-3.84l-.84 4.5h-2.08l.84-4.5H9.68l-.84 4.5H6.76zM11.76 14h4.94l.94-5h-4.94l-.94 5z"/>`;
+  }
   currentChannelName.textContent = chName;
   currentChannelTopic.textContent = chTopic;
   messageInput.placeholder = `Message #${chName}`;
@@ -420,7 +432,7 @@ function renderChannelChat() {
   const banner = document.createElement("div");
   banner.className = "channel-welcome-banner";
   banner.innerHTML = `
-    <div class="banner-hash">#</div>
+    <div class="banner-hash">${isLocked ? "🔒" : "#"}</div>
     <h1>Welcome to #${chName}!</h1>
     <p>${chTopic}</p>
   `;
