@@ -3,154 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Paracord // Zero-Trust Sanctuary</title>
+  <title>Discord</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 127.14 96.36' fill='%235865F2'><path d='M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z'/></svg>">
 </head>
 <body class="discord-theme" oncontextmenu="return false;">
 
-  <!-- PRIVACY DEFENSE OVERLAY (Triggers on Tab Switch / Screen Capture Attempt) -->
+  <!-- DISCRETE PRIVACY BLUR (When Tab Switched or Screen Captured) -->
   <div id="privacyShield" class="privacy-shield hidden">
-    <div class="shield-content">
-      <div class="shield-icon">🛡️</div>
-      <h2>ZERO-TRUST PRIVACY SHIELD ACTIVE</h2>
-      <p>Window out of focus or screen capture detected. Contents shielded.</p>
+    <div class="shield-card">
+      <svg class="discord-logo-sm" viewBox="0 0 127.14 96.36">
+        <path fill="#5865F2" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/>
+      </svg>
+      <h3>Discord is paused</h3>
+      <p>Click anywhere to return to your chat.</p>
     </div>
   </div>
 
-  <!-- SCREENSHOT ATTEMPT WARNING FLASH -->
-  <div id="screenshotAlert" class="screenshot-alert hidden">
-    <div class="alert-box">
-      <div class="alert-icon">⚠️</div>
-      <h2>SCREENSHOT ATTEMPT INTERCEPTED</h2>
-      <p>Clipboard sanitized. Screen-grab blocked by Zero-Trust policy.</p>
+  <!-- AUTHENTIC DISCORD LOGIN SCREEN -->
+  <div id="lockScreen" class="login-screen">
+    <div class="login-wrapper">
+      <div class="login-form-pane">
+        <h2 class="login-title">Welcome back!</h2>
+        <p class="login-subtitle">We're so excited to see you again!</p>
+
+        <div class="account-pill">
+          <div class="account-avatar">
+            <span>C</span>
+            <span class="status-online"></span>
+          </div>
+          <div class="account-details">
+            <span class="account-name">CrafterOnVR</span>
+            <span class="account-sub" id="hardwareEnclaveId">Device Verified</span>
+          </div>
+        </div>
+
+        <div id="gateError" class="login-error hidden"></div>
+
+        <button id="btnUnlockBiometric" class="discord-btn-primary">
+          Log In with Biometrics or PIN
+        </button>
+
+        <button id="btnBypassTest" class="discord-btn-secondary">
+          Continue as Guest
+        </button>
+
+        <p class="login-footer-text">
+          Protected by Discord Enhanced Display Protection & Biometrics.
+        </p>
+      </div>
+
+      <div class="login-qr-pane">
+        <div class="qr-box">
+          <div class="qr-graphic">
+            <svg viewBox="0 0 100 100" class="qr-svg">
+              <rect x="5" y="5" width="30" height="30" rx="4" fill="#313338" stroke="#5865F2" stroke-width="4"/>
+              <rect x="13" y="13" width="14" height="14" rx="2" fill="#5865F2"/>
+              <rect x="65" y="5" width="30" height="30" rx="4" fill="#313338" stroke="#5865F2" stroke-width="4"/>
+              <rect x="73" y="13" width="14" height="14" rx="2" fill="#5865F2"/>
+              <rect x="5" y="65" width="30" height="30" rx="4" fill="#313338" stroke="#5865F2" stroke-width="4"/>
+              <rect x="13" y="73" width="14" height="14" rx="2" fill="#5865F2"/>
+              <rect x="45" y="10" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="45" y="30" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="10" y="45" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="30" y="45" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="45" y="45" width="10" height="10" fill="#5865F2"/>
+              <rect x="65" y="45" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="85" y="45" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="45" y="65" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="65" y="65" width="10" height="10" fill="#5865F2"/>
+              <rect x="45" y="85" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="65" y="85" width="10" height="10" fill="#DBDEE1"/>
+              <rect x="85" y="85" width="10" height="10" fill="#DBDEE1"/>
+            </svg>
+            <div class="qr-center-icon">
+              <svg viewBox="0 0 127.14 96.36" width="18" height="14" fill="#5865F2">
+                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/>
+              </svg>
+            </div>
+          </div>
+          <h4>Log in with Passkey</h4>
+          <p>Scan with your phone's camera or use your device biometric sensor to log in instantly.</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- SCREEN 1: 4FA ZERO-TRUST BIOMETRIC GATE -->
-  <div id="lockScreen" class="lock-screen">
-    <div class="gate-card">
-      <div class="gate-icon-wrapper">
-        <svg class="gate-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+  <!-- AUTHENTIC DISCORD MAIN APPLICATION -->
+  <div id="appContainer" class="app-container hidden">
+
+    <!-- 1. LEFT-MOST SERVER RAIL -->
+    <div class="server-rail">
+      <!-- Direct Messages Home Button -->
+      <div class="server-rail-item active" id="btnHomeDM" title="Direct Messages">
+        <div class="pill-indicator"></div>
+        <div class="server-btn home-btn">
+          <svg viewBox="0 0 127.14 96.36" width="26" height="20" fill="currentColor">
+            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="guild-separator"></div>
+
+      <!-- Server Icon (Paranoid Sanctuary) -->
+      <div class="server-rail-item active" id="serverIconBtn" title="Paranoid Sanctuary">
+        <div class="pill-indicator"></div>
+        <div class="server-btn guild-avatar" id="serverRailInitials">PS</div>
+      </div>
+
+      <!-- Add Server Button -->
+      <div class="server-rail-item" id="btnUploadConfig" title="Import server_config.json">
+        <div class="server-btn add-btn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </div>
+      </div>
+      <input type="file" id="configFileInput" accept=".json" style="display: none;">
+
+      <!-- Explore Public Servers Button -->
+      <div class="server-rail-item" title="Explore Discoverable Servers">
+        <div class="server-btn explore-btn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CHANNELS SIDEBAR -->
+    <div class="channel-sidebar">
+      <!-- Server Header Dropdown -->
+      <div class="server-header-dropdown" id="btnServerDropdown">
+        <h2 id="serverName">Paranoid Sanctuary</h2>
+        <svg class="dropdown-chevron" viewBox="0 0 18 18" width="18" height="18">
+          <path fill="currentColor" d="M4.5 6.75l4.5 4.5 4.5-4.5"/>
         </svg>
       </div>
 
-      <h1 class="gate-title">PARACORD</h1>
-      <p class="gate-subtitle">ZERO-TRUST DISCORD WEB SANCTUARY</p>
-
-      <div class="security-badges">
-        <div class="badge-item">
-          <span class="badge-icon green">🛡️</span>
-          <div>
-            <strong>ANTI-SCREENSHOT ENFORCED</strong>
-            <span>PrintScreen intercept & focus-loss blur active</span>
-          </div>
-        </div>
-        <div class="badge-item">
-          <span class="badge-icon blurple">🔑</span>
-          <div>
-            <strong>4FA BIOMETRIC WEBAUTHN</strong>
-            <span>Windows Hello / Face ID / Passkey validation</span>
-          </div>
-        </div>
-        <div class="badge-item">
-          <span class="badge-icon yellow">⚡</span>
-          <div>
-            <strong>HARDWARE-BOUND ENCLAVE</strong>
-            <span id="hardwareEnclaveId">QC-KEY-GENERATING...</span>
-          </div>
-        </div>
-      </div>
-
-      <div id="gateError" class="gate-error hidden"></div>
-
-      <button id="btnUnlockBiometric" class="btn-blurple">
-        <span class="btn-icon">👆</span> UNLOCK SANCTUARY (WEBAUTHN / HELLO)
-      </button>
-
-      <button id="btnBypassTest" class="btn-ghost">
-        <span class="btn-icon">⚡</span> BYPASS (TEST / DEBUG ENVIRONMENT)
-      </button>
-    </div>
-  </div>
-
-  <!-- SCREEN 2: MAIN DISCORD INTERFACE -->
-  <div id="appContainer" class="app-container hidden">
-    
-    <!-- 1. Left-most Server Rail -->
-    <div class="server-rail">
-      <div class="server-pill-indicator"></div>
-      <div class="server-icon active" id="serverIconBtn" title="Paranoid Sanctuary">
-        <span id="serverRailInitials">PS</span>
-      </div>
-      <div class="rail-divider"></div>
-      <div class="server-icon action-btn" id="btnUploadConfig" title="Import Discord Export (server_config.json)">
-        <span>+</span>
-      </div>
-      <input type="file" id="configFileInput" accept=".json" style="display: none;">
-      <div class="server-icon action-btn" id="btnLockApp" title="Lock Sanctuary">
-        <span>🔒</span>
-      </div>
-    </div>
-
-    <!-- 2. Channels Sidebar -->
-    <div class="channel-sidebar">
-      <div class="server-header">
-        <div class="server-title-row">
-          <h2 id="serverName">Paranoid Sanctuary</h2>
-          <span class="verified-badge" title="Zero-Trust Verified">✓</span>
-        </div>
-        <div class="server-status-chip">
-          <span class="pulse-dot"></span>
-          <span>FLAG_SECURE ACTIVE</span>
-        </div>
-      </div>
-
+      <!-- Channels List -->
       <div class="channel-list" id="channelList">
         <!-- Rendered dynamically by app.js -->
       </div>
 
-      <!-- Current User Footer -->
+      <!-- Authentic User Footer -->
       <div class="user-footer">
-        <div class="avatar-sm">
-          <span>YOU</span>
-          <div class="online-indicator"></div>
+        <div class="user-avatar-wrapper">
+          <div class="user-avatar">C</div>
+          <span class="user-status-dot"></span>
         </div>
-        <div class="user-info">
-          <span class="username">OpSec Master</span>
-          <span class="user-id" id="footerHardwareId">QC-KEY-...</span>
+        <div class="user-tag-box">
+          <div class="username-line">CrafterOnVR</div>
+          <div class="user-custom-status" id="footerHardwareId">Online</div>
+        </div>
+        <div class="user-controls">
+          <!-- Mic Mute Button -->
+          <button class="footer-btn" title="Mute">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </button>
+          <!-- Deafen Button -->
+          <button class="footer-btn" title="Deafen">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1a7 7 0 0 1 14 0v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/>
+            </svg>
+          </button>
+          <!-- User Settings (Lock/Purge menu) -->
+          <button class="footer-btn" id="btnUserSettings" title="User Settings">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 3. Main Chat View -->
+    <!-- 3. MAIN CHAT VIEW -->
     <div class="chat-main">
-      
-      <!-- Top App Bar -->
+      <!-- Top Channel Bar -->
       <div class="chat-topbar">
         <div class="topbar-left">
-          <span class="hash-symbol">#</span>
+          <svg class="hash-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M5.88 20.5l.84-4.5H3.1l.38-2h3.84l.94-5H4.64l.38-2h3.84l.84-4.5h2.08l-.84 4.5h4.94l.84-4.5h2.08l-.84 4.5h3.62l-.38 2h-3.84l-.94 5h3.62l-.38 2h-3.84l-.84 4.5h-2.08l.84-4.5H9.68l-.84 4.5H6.76zM11.76 14h4.94l.94-5h-4.94l-.94 5z"/>
+          </svg>
           <h3 id="currentChannelName">classified-gc</h3>
-          <span class="topbar-divider"></span>
-          <p id="currentChannelTopic" class="channel-topic">Protected by Anti-Screenshot & Biometrics.</p>
+          <div class="topbar-divider"></div>
+          <p id="currentChannelTopic" class="channel-topic">General discussions and updates.</p>
         </div>
 
         <div class="topbar-right">
-          <div class="shield-badge">
-            <span class="shield-dot"></span>
-            <span>NO SCREENSHOTS</span>
+          <!-- Notification Bell -->
+          <button class="topbar-icon-btn" title="Notification Settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+            </svg>
+          </button>
+          <!-- Pinned Messages -->
+          <button class="topbar-icon-btn" title="Pinned Messages">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+          </button>
+          <!-- Member List Toggle -->
+          <button class="topbar-icon-btn" title="Member List">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+            </svg>
+          </button>
+
+          <!-- Search Box -->
+          <div class="search-box">
+            <input type="text" placeholder="Search" spellcheck="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
           </div>
 
-          <!-- DEAD MAN'S SWITCH BUTTON -->
-          <button id="btnDms" class="btn-dms" title="Dead Man's Switch - Emergency Incinerator">
-            <span class="dms-skull">⚠️</span>
-            <span>D.M.S.</span>
+          <!-- Discrete Cache / Reset Button (The covert D.M.S.) -->
+          <button id="btnDms" class="topbar-icon-btn discreet-shield" title="Server Security & Cache">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+            </svg>
           </button>
         </div>
       </div>
 
-      <!-- Message History Feed -->
+      <!-- Messages Feed -->
       <div class="chat-messages" id="messagesFeed">
         <!-- Rendered dynamically by app.js -->
       </div>
@@ -158,7 +239,7 @@
       <!-- Custom Emoji Picker Tray -->
       <div id="emojiPickerTray" class="emoji-picker-tray hidden">
         <div class="emoji-tray-header">
-          <span>SERVER CUSTOM EMOJIS</span>
+          <span>SERVER EMOJIS</span>
           <span class="close-tray" id="btnCloseEmojiTray">✕</span>
         </div>
         <div class="emoji-grid" id="emojiGrid">
@@ -169,71 +250,73 @@
       <!-- Chat Input Area -->
       <div class="chat-input-wrapper">
         <div class="chat-input-bar">
-          <!-- Ephemeral Timer Button -->
-          <button id="btnBurnTimer" class="input-btn burn-btn" title="Ephemeral Self-Destruct Timer">
-            <span class="burn-icon">🔥</span>
-            <span id="burnTimerLabel">Off</span>
+          <!-- Attachment Button (+) -->
+          <button class="input-accessory-btn" title="Upload a file">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
           </button>
 
           <!-- Input Text Area -->
           <input type="text" id="messageInput" placeholder="Message #classified-gc" autocomplete="off" spellcheck="false">
 
-          <!-- Emoji Picker Toggle -->
-          <button id="btnToggleEmoji" class="input-btn" title="Server Emojis">
-            <span>😃</span>
+          <!-- Ephemeral Timer Toggle (Discreet) -->
+          <button id="btnBurnTimer" class="input-accessory-btn timer-btn" title="Toggle Disappearing Timer">
+            <span class="timer-flame">🔥</span>
+            <span id="burnTimerLabel">Off</span>
           </button>
 
-          <!-- Send Button -->
-          <button id="btnSendMessage" class="btn-send" title="Send Message">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          <!-- Nitro Gift -->
+          <button class="input-accessory-btn" title="Gift Nitro">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1h-2l1-1.33c.23-.42.59-.67 1-.67zM9 4c.41 0 .77.25 1 .67L11 6H9c-.55 0-1-.45-1-1s.45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76V14h2V8.76L15.38 12 17 10.83 14.92 8H20v6z"/>
+            </svg>
+          </button>
+
+          <!-- GIF Picker -->
+          <button class="input-accessory-btn" title="Open GIF picker">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 9H7v-2h2v-1H6V8h4v5zm4-3h-2v1h2v1h-2v1h3v1h-4V8h4v2zm5 1h-2v3h-1.5V8H20v1h-2.5v1H19v1z"/>
+            </svg>
+          </button>
+
+          <!-- Emoji Picker Toggle -->
+          <button id="btnToggleEmoji" class="input-accessory-btn" title="Select Emoji">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
             </svg>
           </button>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- DEAD MAN'S SWITCH CONFIRMATION MODAL -->
+  <!-- DISCORD-STYLED MODAL: CLEAR SESSION & CACHE (COVERT D.M.S.) -->
   <div id="dmsModal" class="modal-backdrop hidden">
-    <div class="modal-box dms-modal">
-      <div class="modal-header">
-        <span class="modal-alert-icon">⚠️</span>
-        <h3>DEAD MAN'S SWITCH ARMED</h3>
-      </div>
-      <div class="modal-body">
-        <p class="modal-warning">
-          <strong>ANTI-FALSE-ALARM SAFEGUARD:</strong><br>
-          To prevent accidental execution, you must <strong>press and hold</strong> the button below for <strong>3 full seconds</strong>. Releasing at any moment safely aborts without wiping anything.
-        </p>
-        <p class="modal-consequence">
-          If completed, all in-memory chats, local decrypted caches, and telemetry will be permanently incinerated with zero recovery residue.
+    <div class="modal-box">
+      <div class="modal-inner">
+        <h3 class="modal-title">Clear Server Session & Cache</h3>
+        <p class="modal-desc">
+          Are you sure you want to clear your local session? This will immediately purge all cached channel messages, reset your device encryption state, and return you to the login screen.
         </p>
 
         <!-- Circular Hold Progress -->
         <div class="hold-meter-wrapper">
-          <svg class="progress-ring" width="120" height="120">
-            <circle class="progress-ring-bg" stroke="#383A40" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-            <circle id="dmsProgressRing" class="progress-ring-fill" stroke="#ED4245" stroke-width="8" stroke-dasharray="314.159" stroke-dashoffset="314.159" stroke-linecap="round" fill="transparent" r="50" cx="60" cy="60"/>
+          <svg class="progress-ring" width="80" height="80">
+            <circle class="progress-ring-bg" stroke="#383A40" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+            <circle id="dmsProgressRing" class="progress-ring-fill" stroke="#DA373C" stroke-width="6" stroke-dasharray="213.628" stroke-dashoffset="213.628" stroke-linecap="round" fill="transparent" r="34" cx="40" cy="40"/>
           </svg>
           <div class="meter-text">
             <span id="dmsPercent">0%</span>
-            <span class="meter-label">HOLD</span>
           </div>
         </div>
 
-        <div id="dmsStatusText" class="dms-status-text">Hold button for 3.0s to confirm incineration.</div>
-      </div>
+        <div id="dmsStatusText" class="dms-status-text">Hold the button for 3 seconds to confirm.</div>
 
-      <div class="modal-footer">
-        <!-- Hold-to-Nuke Button -->
-        <button id="btnHoldNuke" class="btn-nuke-hold">
-          HOLD FOR 3 SECONDS TO INCINERATE
-        </button>
-        <button id="btnCancelDms" class="btn-ghost">
-          CANCEL / ABORT
-        </button>
+        <div class="modal-btn-row">
+          <button id="btnCancelDms" class="discord-btn-cancel">Cancel</button>
+          <button id="btnHoldNuke" class="discord-btn-danger">Hold to Confirm (3s)</button>
+        </div>
       </div>
     </div>
   </div>

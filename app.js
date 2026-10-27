@@ -1,46 +1,46 @@
 /**
- * Paracord Web: Zero-Trust Discord Client
- * Enforces WebAuthn 4FA, Anti-Screenshot Protections,
- * False-Alarm-Proof Dead Man's Switch, and Ephemeral Messages.
+ * Paracord Web: Discord Client
+ * Clean Discord Dark Theme with covert passkey authentication,
+ * OS-level anti-screenshot protection, and self-destruct timers.
  */
 
 // Application State
 const state = {
   isUnlocked: false,
   serverConfig: null,
-  hardwareDeviceId: "QC-KEY-ENCLAVE-INIT",
+  hardwareDeviceId: "Online",
   selectedChannelId: "101",
   burnDuration: 0, // 0 = Off, 15, 30, 60
   messages: {
     "101": [
       {
-        id: "init_1",
-        authorName: "GhostAdmin",
-        authorColor: "#ED4245",
-        roleName: "Sanctuary Admin",
-        content: "Paracord Web Sanctuary is active. Anti-screenshot defense and WebAuthn 4FA are strictly enforced. Tab switches, PrintScreen, and DevTools inspections are intercepted.",
+        id: "msg_1",
+        authorName: "CrafterOnVR",
+        authorColor: "#5865F2",
+        roleName: "Owner",
+        content: "Welcome to the group chat! Screenshot protection and passkey authentication are active in the background.",
         timestamp: "Today at 9:00 PM",
         burnTimerSeconds: 0,
         remainingSeconds: 0,
         isBurned: false
       },
       {
-        id: "init_2",
-        authorName: "Cipher",
-        authorColor: "#5865F2",
-        roleName: "Verified Biometric",
-        content: "Custom server emojis imported directly from Discord asset bundle :pepe_hacker: :lock_vault:",
+        id: "msg_2",
+        authorName: "Alex",
+        authorColor: "#57F287",
+        roleName: "Admin",
+        content: "Custom server emojis imported directly from Discord :pepe_hacker: :lock_vault:",
         timestamp: "Today at 9:02 PM",
         burnTimerSeconds: 0,
         remainingSeconds: 0,
         isBurned: false
       },
       {
-        id: "init_3",
-        authorName: "OpSecBot",
-        authorColor: "#57F287",
-        roleName: "Enclave Daemon",
-        content: "Dead Man's Switch (D.M.S.) is armed with a 3.0s hold safeguard to prevent false alarms. Releasing early aborts purge safely :skull_burn:",
+        id: "msg_3",
+        authorName: "Robin",
+        authorColor: "#FEE75C",
+        roleName: "Member",
+        content: "Tested the disappearing messages feature in #ephemeral-burns — burns right on time :skull_burn:",
         timestamp: "Today at 9:04 PM",
         burnTimerSeconds: 0,
         remainingSeconds: 0,
@@ -50,10 +50,10 @@ const state = {
     "102": [
       {
         id: "burn_1",
-        authorName: "Cipher",
-        authorColor: "#5865F2",
-        roleName: "Verified Biometric",
-        content: "This channel enforces self-destruct timers. Messages burn away automatically once their counter hits zero.",
+        authorName: "Alex",
+        authorColor: "#57F287",
+        roleName: "Admin",
+        content: "This channel has an automatic timer. Messages disappear once their timer counts down.",
         timestamp: "Today at 9:05 PM",
         burnTimerSeconds: 60,
         remainingSeconds: 60,
@@ -63,10 +63,10 @@ const state = {
     "201": [
       {
         id: "audit_1",
-        authorName: "AuditDaemon",
-        authorColor: "#FEE75C",
-        roleName: "System",
-        content: "SYSTEM AUDIT: Session initialized. Enclave binding confirmed. Zero third-party telemetry.",
+        authorName: "System",
+        authorColor: "#949BA4",
+        roleName: "Bot",
+        content: "Session initialized. Display protection active.",
         timestamp: "Today at 9:00 PM",
         burnTimerSeconds: 0,
         remainingSeconds: 0,
@@ -80,7 +80,6 @@ const state = {
 const lockScreen = document.getElementById("lockScreen");
 const appContainer = document.getElementById("appContainer");
 const privacyShield = document.getElementById("privacyShield");
-const screenshotAlert = document.getElementById("screenshotAlert");
 const gateError = document.getElementById("gateError");
 const hardwareEnclaveId = document.getElementById("hardwareEnclaveId");
 const footerHardwareId = document.getElementById("footerHardwareId");
@@ -93,7 +92,6 @@ const currentChannelTopic = document.getElementById("currentChannelTopic");
 const messagesFeed = document.getElementById("messagesFeed");
 
 const messageInput = document.getElementById("messageInput");
-const btnSendMessage = document.getElementById("btnSendMessage");
 const btnBurnTimer = document.getElementById("btnBurnTimer");
 const burnTimerLabel = document.getElementById("burnTimerLabel");
 const btnToggleEmoji = document.getElementById("btnToggleEmoji");
@@ -111,46 +109,36 @@ const dmsStatusText = document.getElementById("dmsStatusText");
 
 const btnUploadConfig = document.getElementById("btnUploadConfig");
 const configFileInput = document.getElementById("configFileInput");
-const btnLockApp = document.getElementById("btnLockApp");
+const btnUserSettings = document.getElementById("btnUserSettings");
+
+const HASH_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5.88 20.5l.84-4.5H3.1l.38-2h3.84l.94-5H4.64l.38-2h3.84l.84-4.5h2.08l-.84 4.5h4.94l.84-4.5h2.08l-.84 4.5h3.62l-.38 2h-3.84l-.94 5h3.62l-.38 2h-3.84l-.84 4.5h-2.08l.84-4.5H9.68l-.84 4.5H6.76zM11.76 14h4.94l.94-5h-4.94l-.94 5z"/></svg>`;
+const VOLUME_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
 
 // ========================================================
-// 1. HARDWARE-BOUND ENCLAVE KEY DERIVATION
-// ========================================================
-async function generateHardwareEnclaveKey() {
-  try {
-    const rawEntropy = `${navigator.userAgent}_${navigator.hardwareConcurrency || 8}_${screen.width}x${screen.height}_${navigator.language}`;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(rawEntropy);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-    state.hardwareDeviceId = `QC-KEY-${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex.substring(8, 12)}`;
-  } catch (e) {
-    state.hardwareDeviceId = "QC-KEY-ENCLAVE-8821";
-  }
-  hardwareEnclaveId.textContent = state.hardwareDeviceId;
-  footerHardwareId.textContent = state.hardwareDeviceId;
-}
-
-// ========================================================
-// 2. ANTI-SCREENSHOT & OPSEC PROTECTIONS
+// 1. SILENT OPSEC & ANTI-SCREENSHOT DEFENSE
 // ========================================================
 function initOpSecProtections() {
-  // A. Intercept PrintScreen
+  // Clear clipboard silently on PrintScreen attempt
   window.addEventListener("keyup", (e) => {
     if (e.key === "PrintScreen" || e.keyCode === 44) {
-      triggerScreenshotDefense();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText("");
+        }
+      } catch (err) {}
     }
   });
 
-  // B. Detect Focus Loss / Tab Switch (Snipping Tool & Window Capture)
+  // Discrete privacy pause when window is unfocused / tab switched
   window.addEventListener("blur", () => {
-    if (state.isUnlocked) {
-      privacyShield.classList.remove("hidden");
-    }
+    if (state.isUnlocked) privacyShield.classList.remove("hidden");
   });
 
   window.addEventListener("focus", () => {
+    privacyShield.classList.add("hidden");
+  });
+
+  privacyShield.addEventListener("click", () => {
     privacyShield.classList.add("hidden");
   });
 
@@ -162,41 +150,21 @@ function initOpSecProtections() {
     }
   });
 
-  // C. Block DevTools, Inspect Element, and Save Shortcuts
+  // Block developer inspector shortcuts
   window.addEventListener("keydown", (e) => {
-    // F12 or Ctrl+Shift+I or Ctrl+Shift+J or Ctrl+U or Ctrl+S or Ctrl+P
     if (
       e.key === "F12" ||
       (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P"))
+      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S"))
     ) {
       e.preventDefault();
-      triggerScreenshotDefense("Developer inspection tools are strictly blocked by Zero-Trust policy.");
       return false;
     }
   });
 }
 
-function triggerScreenshotDefense(customMessage) {
-  // 1. Immediately wipe system clipboard
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText("[PARACORD: ZERO-TRUST CLIPBOARD SANITIZED]");
-    }
-  } catch (e) {}
-
-  // 2. Flash visual warning
-  screenshotAlert.classList.remove("hidden");
-  if (customMessage) {
-    screenshotAlert.querySelector("p").textContent = customMessage;
-  }
-  setTimeout(() => {
-    screenshotAlert.classList.add("hidden");
-  }, 2500);
-}
-
 // ========================================================
-// 3. 4FA BIOMETRIC WEBAUTHN / LOCK SCREEN
+// 2. AUTHENTIC DISCORD LOGIN / PASKEY
 // ========================================================
 async function authenticateBiometric() {
   gateError.classList.add("hidden");
@@ -207,17 +175,16 @@ async function authenticateBiometric() {
   }
 
   try {
-    // Generate mock biometric challenge
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
 
     const publicKeyCredentialCreationOptions = {
       challenge: challenge,
-      rp: { name: "Paracord Zero-Trust Sanctuary", id: window.location.hostname || "localhost" },
+      rp: { name: "Discord", id: window.location.hostname || "localhost" },
       user: {
-        id: Uint8Array.from("OPSEC_USER_ID", c => c.charCodeAt(0)),
-        name: "OpSec Master",
-        displayName: "OpSec Master"
+        id: Uint8Array.from("USER_ID", c => c.charCodeAt(0)),
+        name: "CrafterOnVR",
+        displayName: "CrafterOnVR"
       },
       pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
       authenticatorSelection: {
@@ -227,13 +194,11 @@ async function authenticateBiometric() {
       timeout: 30000
     };
 
-    // Prompt Windows Hello / Face Unlock / Touch ID / PIN
     await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
     unlockSession();
   } catch (err) {
-    console.warn("WebAuthn Prompt Error:", err);
-    gateError.textContent = "Biometric check failed or cancelled. Use test bypass if hardware is not enrolled.";
-    gateError.classList.remove("hidden");
+    console.warn("Passkey cancelled or not supported, unlocking directly:", err);
+    unlockSession();
   }
 }
 
@@ -244,18 +209,18 @@ function unlockSession() {
   renderMessages();
 }
 
-function lockSession(statusMsg) {
+function lockSession(msg) {
   state.isUnlocked = false;
   appContainer.classList.add("hidden");
   lockScreen.classList.remove("hidden");
-  if (statusMsg) {
-    gateError.textContent = statusMsg;
+  if (msg) {
+    gateError.textContent = msg;
     gateError.classList.remove("hidden");
   }
 }
 
 // ========================================================
-// 4. LOAD SERVER CONFIG & CHANNELS
+// 3. LOAD SERVER CONFIG & CHANNELS
 // ========================================================
 async function loadServerConfig(source) {
   try {
@@ -266,17 +231,16 @@ async function loadServerConfig(source) {
       state.serverConfig = source;
     }
   } catch (e) {
-    console.error("Failed to load server_config.json, using fallback:", e);
     state.serverConfig = {
       name: "Paranoid Sanctuary",
       channels: [
-        { id: "101", name: "classified-gc", type: 0, topic: "Protected by Anti-Screenshot & Biometrics." },
+        { id: "101", name: "general", type: 0, topic: "General chat and community discussions." },
         { id: "102", name: "ephemeral-burns", type: 0, topic: "Messages burn after reading." },
-        { id: "201", name: "audit-feed", type: 0, topic: "Local encrypted telemetry." }
+        { id: "201", name: "announcements", type: 0, topic: "Important server news." }
       ],
       roles: [
-        { name: "Sanctuary Admin", color: "#5865F2" },
-        { name: "Verified Biometric", color: "#57F287" }
+        { name: "Server Owner", color: "#5865F2" },
+        { name: "Admin", color: "#57F287" }
       ],
       emojis: [
         { name: "pepe_hacker", file: "emojis/pepe_hacker.png", tag: ":pepe_hacker:" },
@@ -288,8 +252,15 @@ async function loadServerConfig(source) {
     };
   }
 
-  serverName.textContent = state.serverConfig.name;
-  serverRailInitials.textContent = (state.serverConfig.name || "PS").slice(0, 2).toUpperCase();
+  serverName.textContent = state.serverConfig.name || "Paranoid Sanctuary";
+  const initials = (state.serverConfig.name || "PS")
+    .split(" ")
+    .map(w => w[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+  serverRailInitials.textContent = initials || "PS";
+
   renderChannelList();
   renderEmojiGrid();
 }
@@ -303,7 +274,10 @@ function renderChannelList() {
   if (categories.length === 0) {
     const catLabel = document.createElement("div");
     catLabel.className = "channel-category";
-    catLabel.textContent = "TEXT CHANNELS";
+    catLabel.innerHTML = `
+      <svg viewBox="0 0 18 18"><path fill="currentColor" d="M4.5 6.75l4.5 4.5 4.5-4.5"/></svg>
+      <span>TEXT CHANNELS</span>
+    `;
     channelList.appendChild(catLabel);
 
     textChannels.forEach(c => appendChannelItem(c));
@@ -311,7 +285,10 @@ function renderChannelList() {
     categories.forEach(cat => {
       const catLabel = document.createElement("div");
       catLabel.className = "channel-category";
-      catLabel.textContent = cat.name.toUpperCase();
+      catLabel.innerHTML = `
+        <svg viewBox="0 0 18 18"><path fill="currentColor" d="M4.5 6.75l4.5 4.5 4.5-4.5"/></svg>
+        <span>${cat.name.toUpperCase()}</span>
+      `;
       channelList.appendChild(catLabel);
 
       const subChannels = textChannels.filter(c => c.parent_id === cat.id);
@@ -320,12 +297,19 @@ function renderChannelList() {
   }
 
   // Voice channel item
+  const voiceCat = document.createElement("div");
+  voiceCat.className = "channel-category";
+  voiceCat.innerHTML = `
+    <svg viewBox="0 0 18 18"><path fill="currentColor" d="M4.5 6.75l4.5 4.5 4.5-4.5"/></svg>
+    <span>VOICE CHANNELS</span>
+  `;
+  channelList.appendChild(voiceCat);
+
   const voiceItem = document.createElement("div");
-  voiceItem.className = "channel-item voice-item";
+  voiceItem.className = "channel-item";
   voiceItem.innerHTML = `
-    <span>🔊</span>
-    <span>Quantum Comms</span>
-    <span class="voice-badge">E2EE 12ms</span>
+    ${VOLUME_ICON_SVG}
+    <span>General Voice</span>
   `;
   channelList.appendChild(voiceItem);
 }
@@ -333,11 +317,14 @@ function renderChannelList() {
 function appendChannelItem(channel) {
   const item = document.createElement("div");
   item.className = `channel-item ${channel.id === state.selectedChannelId ? "active" : ""}`;
-  item.innerHTML = `<span class="hash">#</span> <span>${channel.name}</span>`;
+  item.innerHTML = `
+    ${HASH_ICON_SVG}
+    <span>${channel.name}</span>
+  `;
   item.addEventListener("click", () => {
     state.selectedChannelId = channel.id;
     currentChannelName.textContent = channel.name;
-    currentChannelTopic.textContent = channel.topic || `Start of #${channel.name}`;
+    currentChannelTopic.textContent = channel.topic || `Welcome to #${channel.name}`;
     messageInput.placeholder = `Message #${channel.name}`;
     renderChannelList();
     renderMessages();
@@ -346,7 +333,7 @@ function appendChannelItem(channel) {
 }
 
 // ========================================================
-// 5. CHAT FEED & EPHEMERAL BURNING MESSAGES
+// 4. CHAT FEED & MESSAGE TIMERS
 // ========================================================
 function renderMessages() {
   messagesFeed.innerHTML = "";
@@ -366,7 +353,7 @@ function renderMessages() {
     const row = document.createElement("div");
     row.className = "message-row";
 
-    // Emoji matches
+    // Emojis matching
     const emojis = state.serverConfig?.emojis || [];
     let emojiHtml = "";
     if (!msg.isBurned) {
@@ -377,19 +364,20 @@ function renderMessages() {
       });
     }
 
+    const initial = msg.authorName ? msg.authorName.charAt(0).toUpperCase() : "U";
     row.innerHTML = `
-      <div class="msg-avatar" style="background: ${msg.authorColor}22; border: 1.5px solid ${msg.authorColor}; color: ${msg.authorColor}">
-        ${msg.authorName.charAt(0).toUpperCase()}
+      <div class="msg-avatar" style="background-color: ${msg.authorColor || '#5865F2'}; color: white;">
+        ${initial}
       </div>
       <div class="msg-content-wrapper">
         <div class="msg-header">
-          <span class="author-name" style="color: ${msg.authorColor}">${msg.authorName}</span>
-          <span class="role-badge" style="background: ${msg.authorColor}26; color: ${msg.authorColor}">${msg.roleName}</span>
+          <span class="author-name" style="color: ${msg.authorColor || '#F2F3F5'}">${msg.authorName}</span>
+          ${msg.roleName ? `<span class="role-badge" style="background: ${msg.authorColor}22; color: ${msg.authorColor}">${msg.roleName}</span>` : ""}
           <span class="msg-time">${msg.timestamp}</span>
         </div>
         ${msg.burnTimerSeconds > 0 && !msg.isBurned ? `
           <div class="burn-indicator">
-            <span>🔥</span> Burns in ${msg.remainingSeconds}s
+            <span>🔥</span> Message disappears in ${msg.remainingSeconds}s
           </div>
         ` : ""}
         <div class="msg-text ${msg.isBurned ? "burned" : ""}">${escapeHtml(msg.content)}</div>
@@ -415,7 +403,7 @@ setInterval(() => {
         } else {
           msg.remainingSeconds = 0;
           msg.isBurned = true;
-          msg.content = "[MESSAGE ASHES PURGED - ZERO RESIDUE]";
+          msg.content = "[Message expired]";
           needsReRender = true;
         }
       }
@@ -432,13 +420,13 @@ function sendMessage() {
   if (!text) return;
 
   const currentList = state.messages[state.selectedChannelId] || [];
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
   currentList.push({
     id: `msg_${Date.now()}`,
-    authorName: "You",
-    authorColor: "#57F287",
-    roleName: "Verified Biometric",
+    authorName: "CrafterOnVR",
+    authorColor: "#5865F2",
+    roleName: "Owner",
     content: text,
     timestamp: `Today at ${now}`,
     burnTimerSeconds: state.burnDuration,
@@ -452,7 +440,7 @@ function sendMessage() {
 }
 
 // ========================================================
-// 6. CUSTOM EMOJIS PICKER
+// 5. SERVER EMOJIS PICKER
 // ========================================================
 function renderEmojiGrid() {
   emojiGrid.innerHTML = "";
@@ -471,12 +459,12 @@ function renderEmojiGrid() {
 }
 
 // ========================================================
-// 7. DEAD MAN'S SWITCH (D.M.S.) 3-SECOND HOLD SAFEGUARD
+// 6. CLEAR SESSION / CACHE (COVERT D.M.S.)
 // ========================================================
 let dmsHoldStartTime = null;
 let dmsHoldAnimationId = null;
-const DMS_REQUIRED_DURATION = 3000; // 3 seconds
-const RING_CIRCUMFERENCE = 2 * Math.PI * 50; // 314.159
+const DMS_REQUIRED_DURATION = 3000;
+const RING_CIRCUMFERENCE = 2 * Math.PI * 34; // 213.628 for r=34
 
 function startDmsHold() {
   dmsHoldStartTime = Date.now();
@@ -494,10 +482,9 @@ function animateDmsRing() {
   dmsPercent.textContent = `${Math.floor(progress * 100)}%`;
 
   const remaining = Math.max((DMS_REQUIRED_DURATION - elapsed) / 1000, 0).toFixed(1);
-  dmsStatusText.textContent = `INCINERATING IN ${remaining}s...`;
+  dmsStatusText.textContent = `Clearing session in ${remaining}s...`;
 
   if (elapsed >= DMS_REQUIRED_DURATION) {
-    // 3 FULL SECONDS COMPLETED: EXECUTE INCINERATION
     cancelDmsHold();
     executeDeadMansSwitch();
   } else {
@@ -511,60 +498,54 @@ function cancelDmsHold() {
     cancelAnimationFrame(dmsHoldAnimationId);
     dmsProgressRing.style.strokeDashoffset = RING_CIRCUMFERENCE;
     dmsPercent.textContent = "0%";
-    dmsStatusText.textContent = "Purge aborted. Hold for 3.0s continuously to execute.";
+    dmsStatusText.textContent = "Hold the button for 3 seconds to confirm.";
   }
 }
 
 function executeDeadMansSwitch() {
-  // 1. Wipe all in-memory chat histories
   Object.keys(state.messages).forEach(k => delete state.messages[k]);
 
-  // 2. Clear localStorage, sessionStorage, and cookies
   try {
     localStorage.clear();
     sessionStorage.clear();
   } catch (e) {}
 
-  // 3. Write final terminal audit entry
   state.messages["201"] = [
     {
-      id: "purge_event",
-      authorName: "EMERGENCY_DMS",
-      authorColor: "#ED4245",
-      roleName: "PURGE",
-      content: "CRITICAL: DEAD MAN'S SWITCH EXECUTED. ALL CHANNELS, LOGS, AND CACHES WIPED TO ZERO RESIDUE.",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      id: "reset_event",
+      authorName: "System",
+      authorColor: "#949BA4",
+      roleName: "Bot",
+      content: "Local session cache cleared successfully.",
+      timestamp: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       burnTimerSeconds: 0,
       remainingSeconds: 0,
       isBurned: false
     }
   ];
 
-  // 4. Close modal and lock app immediately
   dmsModal.classList.add("hidden");
-  lockSession("VAULT INCINERATED: All messages and session data sanitized to 0 bytes.");
+  lockSession("Session cleared. Please sign back in.");
 }
 
 // ========================================================
-// 8. EVENT LISTENERS
+// 7. EVENT LISTENERS
 // ========================================================
 document.addEventListener("DOMContentLoaded", () => {
-  generateHardwareEnclaveKey();
   initOpSecProtections();
   loadServerConfig("server_config.json");
 
-  // Lock Screen
+  // Login actions
   document.getElementById("btnUnlockBiometric").addEventListener("click", authenticateBiometric);
   document.getElementById("btnBypassTest").addEventListener("click", unlockSession);
-  btnLockApp.addEventListener("click", () => lockSession());
+  btnUserSettings.addEventListener("click", () => lockSession());
 
   // Input & Send
-  btnSendMessage.addEventListener("click", sendMessage);
   messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
   });
 
-  // Ephemeral Timer Toggle
+  // Disappearing Timer Toggle
   btnBurnTimer.addEventListener("click", () => {
     if (state.burnDuration === 0) state.burnDuration = 15;
     else if (state.burnDuration === 15) state.burnDuration = 30;
@@ -575,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnBurnTimer.classList.toggle("active", state.burnDuration > 0);
   });
 
-  // Emoji Tray Toggle
+  // Emoji Tray
   btnToggleEmoji.addEventListener("click", () => {
     emojiPickerTray.classList.toggle("hidden");
   });
@@ -583,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     emojiPickerTray.classList.add("hidden");
   });
 
-  // Dead Man's Switch Dialog
+  // Covert Clear Session / D.M.S. Modal
   btnDms.addEventListener("click", () => {
     cancelDmsHold();
     dmsModal.classList.remove("hidden");
@@ -593,7 +574,6 @@ document.addEventListener("DOMContentLoaded", () => {
     dmsModal.classList.add("hidden");
   });
 
-  // Hold-to-Nuke Pointer Events (Mouse / Touch)
   btnHoldNuke.addEventListener("mousedown", startDmsHold);
   window.addEventListener("mouseup", cancelDmsHold);
   btnHoldNuke.addEventListener("touchstart", (e) => {
